@@ -9,6 +9,8 @@ import random
 
 import string
 import pickle
+import linecache
+import json
 
 import torch
 from torch import nn
@@ -26,7 +28,7 @@ random.seed(1)
 
 class FilePathDataset(torch.utils.data.Dataset):
     def __init__(self, dataset,
-                 token_maps="token_maps.pkl",
+                 token_maps="token_maps_hindi.pkl",
                  tokenizer="transfo-xl-wt103",
                  word_separator=3039, 
                  token_separator=" ", 
@@ -51,12 +53,19 @@ class FilePathDataset(torch.utils.data.Dataset):
             self.token_maps = pickle.load(handle)     
             
     def __len__(self):
+        if type(self.data) is str:
+            return sum(1 for line in open(self.data))
         return len(self.data)
 
     def __getitem__(self, idx):
-
-        phonemes = self.data[idx]['phonemes']
-        input_ids = self.data[idx]['input_ids']
+        
+        if type(self.data) is str:
+            line = json.loads(linecache.getline(self.data, idx))
+            phonemes = line['phonemes']
+            input_ids = line['input_ids']
+        else:
+            phonemes = self.data[idx]['phonemes']
+            input_ids = self.data[idx]['input_ids']
 
         words = []
         labels = ""
